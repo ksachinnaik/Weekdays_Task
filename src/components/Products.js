@@ -4,39 +4,70 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import Product from "./Product";
+import Loading from "./Loading";
 
 const Products = () => {
   const isNonMobile = useMediaQuery("(min-width: 1000px)");
-
   const [data, setData] = useState([]);
-    const [error, setError] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [load, setLoad] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const limit = 10;
 
-    useEffect(() => {
-        const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
+  const fetchData = () => {
+    setLoading(true);
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
 
-        const body = JSON.stringify({
-            "limit": 10,
-            "offset": 0
-        });
+    const body = JSON.stringify({
+      limit,
+      offset,
+    });
 
-        const requestOptions = {
-            method: "POST",
-            headers: myHeaders,
-            body
-        };
+    const requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body,
+    };
 
-        fetch("https://api.weekday.technology/adhoc/getSampleJdJSON", requestOptions)
-            .then(response => response.json()) 
-            .then(data => {
-                setData(data.jdList);
-                console.log(data);
-            })
-            .catch(error => {
-                setError(error);
-                console.error("Fetching error:", error);
-            });
-    }, []); 
+    fetch("https://api.weekday.technology/adhoc/getSampleJdJSON", requestOptions)
+      .then((response) => response.json())
+      .then((responseData) => {
+        setData((prevData) => [...prevData, ...responseData.jdList]);
+        setOffset((prevOffset) => prevOffset + limit);
+        setLoading(false);
+        setLoad(false);
+      })
+      .catch((error) => {
+        setError(error);
+        setLoading(false);
+        setLoad(false);
+        console.error("Fetching error:", error);
+      });
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []); // Fetch initial data
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop ===
+        document.documentElement.offsetHeight
+      ) {
+        fetchData(); 
+        setLoad(true);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
 
   return (
     <Box m="1.5rem 2.5rem">
@@ -87,6 +118,7 @@ const Products = () => {
       ) : (
         <>Loading...</>
       )}
+    {load && <Loading />}
     </Box>
   );
 };
