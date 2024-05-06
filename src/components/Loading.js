@@ -1,14 +1,13 @@
-import React from "react";
+import * as React from 'react';
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
 
 const Loading = () => {
-  return (
-    <div className="loading-container">
-      <div className="lds-ripple">
-        <div></div>
-        <div></div>
-      </div>
-    </div>
-  );
+    return (
+        <Box sx={{ display: 'flex' }}>
+          <CircularProgress />
+        </Box>
+      );
 };
 
 export default Loading;
