@@ -5,14 +5,17 @@ import {
 } from "@mui/material";
 import Product from "./Product";
 import Loading from "./Loading";
+import Filters from "./Filters";
+import filters from "../data/data";
 
 const Products = () => {
   const isNonMobile = useMediaQuery("(min-width: 1000px)");
   const [data, setData] = useState([]);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [load, setLoad] = useState(true);
   const [offset, setOffset] = useState(0);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const limit = 10;
 
   const fetchData = () => {
@@ -35,15 +38,18 @@ const Products = () => {
       .then((response) => response.json())
       .then((responseData) => {
         setData((prevData) => [...prevData, ...responseData.jdList]);
+        console.log(data.length);
+        console.log(data);
         setOffset((prevOffset) => prevOffset + limit);
         setLoading(false);
         setLoad(false);
+        console.log(responseData);
       })
       .catch((error) => {
         setError(error);
         setLoading(false);
         setLoad(false);
-        console.error("Fetching error:", error);
+        console.error("Fetching error: ", error);
       });
   };
 
@@ -69,50 +75,73 @@ const Products = () => {
   }, []);
 
 
+  const onFilter = (selectedOptions, key) => {
+
+      var searchKey;
+      switch(key) {
+          case "Roles":
+            searchKey = "jobRole";
+            break;
+
+          case "Mode":
+            searchKey = "location";
+            break;
+
+          case "Minimum Base Pay Salary (LPA)":
+            searchKey = "minJdSalary";
+            break;
+
+          case "Experience (years)":
+            searchKey = "minExp";
+            break;
+      }
+
+      let filterOptions = [];
+      selectedOptions.map(option => {
+          (typeof option.value === "string") ? filterOptions.push(option.value.toLowerCase()) : filterOptions.push(option.value);
+      })
+
+      setData(data.filter(cur => {
+          return (typeof cur[searchKey] === "string") ? filterOptions.includes(cur[searchKey].toLowerCase()) : 
+                    filterOptions.includes(cur[searchKey]);
+      }))
+  }
+
   return (
+
+    <div>
+      <Filters
+        filters={filters}
+        onFilter={onFilter}
+      />
     <Box m="1.5rem 2.5rem">
+
     {error && <p>Error: {error.message}</p>}
       {data ? (
         <Box
           mt="20px"
-          display="grid"
-          gridTemplateColumns="repeat(4, minmax(0, 1fr))"
-          justifyContent="space-between"
-          rowGap="20px"
-          columnGap="1.33%"
-          sx={{
-            "& > div": { gridColumn: isNonMobile ? undefined : "span 4" },
-          }}
+          display="flex"
+          alignItems="center"
+          justifyContent="space-evenly"
+          gap="30px 10px"
+          flexWrap="wrap"
         >
-          {Array.isArray(data) && data.map(
-  ({
-    jdUid,
-    companyName,
-    jobDetailsFromCompany,
-    minJdSalary,
-    jdLink,
-    jobRole,
-    location,
-    logoUrl,
-    minExp,
-    maxExp,
-    salaryCurrencyCode,
-  }) => (
-    <Product
-      key={jdUid} 
-      _id={jdUid}
-      companyName={companyName}
-      description={jobDetailsFromCompany} 
-      salary={minJdSalary}
-      category={jobRole} 
-      link={jdLink}
-      location={location}
-      salaryCurrencyCode={salaryCurrencyCode}
-      stat={`${minExp}-${maxExp} years`} 
-      logoUrl={logoUrl} 
+         { data.map((cur,index) => {
+ 
+  return <Product
+      key={index} 
+      _id={cur.jdUid}
+      companyName={cur.companyName}
+      description={cur.jobDetailsFromCompany} 
+      salary={cur.minJdSalary ? `${cur.minJdSalary}-${cur.maxJdSalary}` : "Not disclosed"} 
+      category={cur.jobRole} 
+      link={cur.jdLink}
+      location={cur.location}
+      salaryCurrencyCode={cur.salaryCurrencyCode}
+      stat={cur.minExp ? `${cur.minExp} years` : "Not disclosed"}
+      logoUrl={cur.logoUrl} 
     />
-  )
-)}
+})}
 
         </Box>
       ) : (
@@ -120,6 +149,7 @@ const Products = () => {
       )}
     {load && <Loading />}
     </Box>
+    </div>
   );
 };
 
